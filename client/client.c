@@ -21,18 +21,20 @@ void connect_flood(int loop)
     struct sockaddr_in servaddr;
     int sockfd;
     
-/* ============sockfd============ */
-    sockfd = Socket(AF_INET, SOCK_STREAM, 0);
-
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(host);
-    servaddr.sin_port = htons(port);
-/* ============connect============ */
     time_t start=clock();
     int i;
     for(i=0;i<loop;i++)
-   	 Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+	{
+	    sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	    bzero(&servaddr, sizeof(servaddr));
+	    servaddr.sin_family = AF_INET;
+	    servaddr.sin_addr.s_addr = inet_addr(host);
+            servaddr.sin_port = htons(port);
+
+	    Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+	    close(sockfd);
+	}
     time_t end=clock();
     double cost=(end-start)/CLOCKS_PER_SEC;
     printf("connect:%d,cost %lf sec\n",loop,cost);
@@ -78,8 +80,8 @@ int main(int argc, char *argv[])
 	exit(0);
     }
 
-    request_flood(atoi(argv[1]));
-    //connect_flood(atoi(argv[1]));
+   request_flood(atoi(argv[1]));
+   // connect_flood(atoi(argv[1]));
 
     return 0;  
 }
