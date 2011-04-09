@@ -23,15 +23,19 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epo
     if (val>0)
     {
         // if we actually get data print it
-       buf[val] = '\0';
+       //buf[val] = '\0';
        LOG(" received data -> %s %t\n", buf,clock());
        request *req=request_new(elem->fd,buf);
-       request_parse(req);
-       request_free(req);
-       int sent=write(elem->fd,buf,strlen(buf));
+      // request_parse(req);
+      // LOG("len:%d,body:%s",req->length,req->body);
+       if(req->body!=NULL)
+       {
+       int sent=write(elem->fd,req->body,strlen(req->body));
        if(sent==-1)
 	       INFO("sent error\n");
        LOG("sent:%d",sent);
+       }
+       request_free(req);
     }
 }
 

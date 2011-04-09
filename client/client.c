@@ -45,7 +45,23 @@ void request_flood(int loop)
     char *host="127.0.0.1";
     int port=8080;
     struct sockaddr_in servaddr;
-    char buf[MAXLINE]="hello world,i'm overred,ankurs";
+    char *split="\r\n";
+    char *cmd="GET";
+
+    char buf[MAXLINE]="asdfalllllllllllllkasdfsahid";
+    char msg[MAXLINE];
+    
+    strcpy(msg,cmd);
+
+    strcat(msg,split);
+    char c[32]={0};
+    sprintf(c,"%d",strlen(buf));
+
+    strcat(msg,c);
+    strcat(msg,split);
+    strcat(msg,buf);
+    msg[strlen(msg)]='\0';
+
     int sockfd;
     
 /* ============sockfd============ */
@@ -63,7 +79,7 @@ void request_flood(int loop)
     time_t start=clock();
     for(;i<loop;i++)
     {
-    	if(write(sockfd,buf,sizeof(buf))==-1)
+    	if(write(sockfd,msg,sizeof(msg))==-1)
 		printf("\n** write_1**\n");
     
     }

@@ -1,4 +1,7 @@
-typedef enum{NONE,GET} *command;
+typedef enum{NONE=0,GET,PUT} *command;
+
+typedef enum {NO,CMD,LEN,STP} states;
+static states _table[256]={NO};
 
 typedef struct{
 #ifdef DEBUG 
@@ -6,7 +9,9 @@ typedef struct{
 #endif
 	int client_fd;
 	char *client_addr;
-	void* data;
+	char *data;
+	char *body;
+	int  length;
 	command cmd;
 }request;
 
