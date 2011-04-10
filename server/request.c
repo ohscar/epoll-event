@@ -105,5 +105,7 @@ request_free(request *req){
 		free(req->cmd);
 	if(req->body!=NULL)
 		free(req->body);
+	if(req->data!=NULL)
+		free(req->data);
 	free(req);
 }
