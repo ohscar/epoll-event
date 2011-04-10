@@ -26,10 +26,10 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epo
        //buf[val] = '\0';
        LOG(" received data -> %s %t\n", buf,clock());
        request *req=request_new(elem->fd,buf);
-      // request_parse(req);
-      // LOG("len:%d,body:%s",req->length,req->body);
+       request_parse(req);
        if(req->body!=NULL)
        {
+       LOG("len:%d,body:%s",req->length,req->body);
        int sent=write(elem->fd,req->body,strlen(req->body));
        if(sent==-1)
 	       INFO("sent error\n");
