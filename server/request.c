@@ -16,7 +16,7 @@ request
 		return NULL;
 	}
 	req->client_fd=client_fd;
-	req->data=data;
+	req->data=strdup(data);
 
 	return req;
 }
@@ -63,7 +63,7 @@ request_parse(request *req)
 					switch(pre_state)
 					{
 						case CMD:
-							req->cmd=line;
+							req->cmd=strdup(line);
 							LOG("cmd:%s",line);
 							break;
 						case LEN:
@@ -84,7 +84,7 @@ request_parse(request *req)
 					while(pos<req->length&&data[idx]!='\0'&&pos<MAXLINE)
 						line[pos++]=data[idx++];
 					line[pos]='\0';
-					req->body=line;
+					req->body=strdup(line);
 					goon=0;
 					break;
 				}
@@ -101,5 +101,9 @@ request_parse(request *req)
 void
 request_free(request *req){
 	INFO("free req");
+	if(req->cmd!=NULL)
+		free(req->cmd);
+	if(req->body!=NULL)
+		free(req->body);
 	free(req);
 }
