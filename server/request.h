@@ -1,7 +1,9 @@
 
 typedef enum {BODY=0,CMD,LEN,STP} states;
+
+//==============================DFA states=================================//
 static states _table[256]={
-	/*   0 nul    1 soh    2 stx    3 etx    4 eot    5 enq    6 ack    7 bel  */
+/*   0 nul    1 soh    2 stx    3 etx    4 eot    5 enq    6 ack    7 bel  */
         0,       0,       0,       0,       0,       0,       0,       0,
 /*   8 bs     9 ht    10 nl    11 vt    12 np    13 cr    14 so    15 si   */
         0,       0,       3,       0,       0,       3,       0,       0,
@@ -40,10 +42,12 @@ typedef struct{
 	unsigned long id;
 #endif
 	int client_fd;
+	//body length
+	int length;
 	char *client_addr;
+	//user data
 	char *data;
 	char *body;
-	int  length;
 	char *cmd;
 }request;
 
