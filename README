@@ -1,2 +1,4 @@
-all based on ankurs's Poll-Event
+high performance epoll-event,25w+ req/sec (without request parse),20w req/sec with request parse on a common pc
+
+based on ankurs's Poll-Event
 https://github.com/ankurs/Poll-Event
