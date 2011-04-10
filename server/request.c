@@ -30,7 +30,7 @@ request_parse(request *req)
 	{
 		unsigned char ch=0;
 		char *data=req->data;
-		int idx=0,pos=0;
+		size_t idx=0,pos=0;
 		char line[MAXLINE]={0};
 		states pre_state=BODY;
 		int goon=1;
@@ -100,11 +100,11 @@ request_parse(request *req)
 void
 request_free(request *req){
 	INFO("free req");
-	if(req->cmd!=NULL)
+	if(req->cmd)
 		free(req->cmd);
-	if(req->body!=NULL)
+	if(req->body)
 		free(req->body);
-	if(req->data!=NULL)
+	if(req->data)
 		free(req->data);
 	free(req);
 }

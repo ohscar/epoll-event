@@ -43,7 +43,7 @@ typedef struct{
 #endif
 	int client_fd;
 	//body length
-	int length;
+	size_t length;
 	char *client_addr;
 	//user data
 	char *data;
