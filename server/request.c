@@ -89,7 +89,6 @@ request_parse(request *req)
 					break;
 				}
 			 default:
-				INFO("DEFAILT");
 				goon=0;
 				
 	 	 }
