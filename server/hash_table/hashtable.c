@@ -359,6 +359,6 @@ uint16_t hash_table_do_hash(void * key, size_t key_len, uint16_t max_key)
         hash+=(i<<4 ^ *ptr<<8 ^ *ptr);
         ptr++;
     }
-    hash = hash / max_key;
+    hash = hash % max_key;
     return hash;
 }
