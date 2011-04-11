@@ -1,108 +1,163 @@
-#include <stdlib.h>
-#include <string.h>
-#include "debug.h"
 #include "request.h"
-#define MAXLINE 1024
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "string.h"
+#include "debug.h"
 
+enum parser_atom{
+	 STATE_METHOD,
+	 STATE_LENGTH,
+	 STATE_BODY,
+	 LAST_STATE,
+};
 
+typedef int state_fn(struct request *req,struct string  *dest);
+state_fn state_method,state_length,state_body,last_state;
 
-request 
-*request_new(int client_fd,char *data){
+static state_fn *States[LAST_STATE+1]={
+	[STATE_METHOD]=&state_method,
+	[STATE_LENGTH]=&state_length,
+	[STATE_BODY]  =&state_body,
+	[LAST_STATE]  =&last_state,
+};
 
-	INFO("create req");
-	request *req=(request*)malloc(sizeof(request));
-	if(req==NULL){
-		INFO("out memory");
-		return NULL;
-	}
-	req->client_fd=client_fd;
-	req->data=strdup(data);
+static int Transforms[LAST_STATE]={
+	[STATE_METHOD]=STATE_LENGTH,
+	[STATE_LENGTH]=STATE_BODY,
+	[STATE_BODY]  =LAST_STATE,
+};
 
-	return req;
+enum{
+	STATE_CONTINUE,
+	STATE_FAIL,
+	STATE_DONE,
+};
+
+int
+last_state(struct request *req,struct string *dest)
+{
+	return STATE_DONE;
 }
 
-
-void
-request_parse(request *req)
+int
+state_method(struct request *req,struct string  *dest)
 {
-
-	if(req->data!=NULL)
-	{
-		unsigned char ch=0;
-		char *data=req->data;
-		size_t idx=0,pos=0;
-		char line[MAXLINE]={0};
-		states pre_state=BODY;
-		int goon=1;
-		while(data[idx]!='\0')
-		{
-		 if(goon==0)break;
-
-		 ch=(unsigned)data[idx];
-	 	 switch(_table[ch])
-	 	 {
-			case CMD:
-				{
-					INFO("CMD");
-					line[pos++]=data[idx++];
-					pre_state=_table[ch];
-					break;
+	INFO("in state_method...");
+	int term=0;
+	char c;
+	int i=0;
+	int pos=0;
+	while(req->data[i]!='\0'){
+		c=req->data[i++];
+		pos++;
+		switch(c){
+			case '\r':
+				term=1;
+				break;
+			case '\n':
+				if(term){
+					req->pos=pos;
+					return STATE_CONTINUE;
 				}
-			case LEN:
-				{
-					INFO("LEN");
-					line[pos++]=data[idx++];
-					pre_state=_table[ch];
+				else
+					return STATE_FAIL;
+			default:
+				string_putc(dest,c);
+				break;
+			}
+	}
+	return STATE_FAIL;
+}
 
+int
+state_length(struct request *req,struct string  *dest)
+{
+	INFO("in state_length...");
+	int term=0;
+	char c;
+	int i=req->pos;
+	int pos=i;
+	LOG("pos:%d",i);
+	while(req->data[i]!='\0'){
+		c=req->data[i++];
+		(pos)++;
+		switch(c){
+			case '\r':{
+				  	term=1;
 					break;
-				}
-			case STP:
-				{
-					INFO("STP");
-					line[pos]='\0';
-					switch(pre_state)
-					{
-						case CMD:
-							req->cmd=strdup(line);
-							LOG("cmd:%s",line);
-							break;
-						case LEN:
-							req->length=atoi(line);
-							LOG("len:%s",line);
-							break;
-						default:break;
-
+				  }
+			case '\n':{
+				  	if(term){
+						req->pos=pos;
+						return STATE_CONTINUE;
 					}
-					line[0]='\0';
-					pos=0;
-					idx+=2;
-					break;
-				}
-			case BODY:
-				{
-					INFO("body");
-					while(pos<req->length&&data[idx]!='\0'&&pos<MAXLINE)
-						line[pos++]=data[idx++];
-					line[pos]='\0';
-					req->body=strdup(line);
-					goon=0;
-					break;
-				}
-			 default:
-				goon=0;
-				
-	 	 }
-	 
+					else
+						return STATE_FAIL;
+				  }
+			default:
+				  if(_table[c]==2)
+					  string_putc(dest,c);
+				  else
+					  return STATE_FAIL;
 		}
 	}
+
+	return STATE_FAIL;
+}
+
+int 
+state_body(struct request *req,struct string  *dest)
+{
+	INFO("in state_body...");
+	char c;
+	int i=req->pos,c1=0;
+	int pos=i;
+	LOG("req len:%d",req->length);
+	while(req->data[i++]!='\0'&&(c1++)<req->length){
+			c=req->data[i];
+			string_putc(dest,c);
+	}
+	return STATE_CONTINUE;
 }
 
 void
-request_free(request *req){
-	if(!req) return;
-	INFO("free req");
-	if(req->cmd)
-		free(req->cmd);
+parse_request(struct request *req)
+{
+	INFO("in parse_request...");
+	int state=STATE_METHOD;
+	state_fn *func=States[state];
+	struct string *data=string_new(0);
+	struct string *dest=data;
+	int ret;
+	while((ret=func(req,dest))!=STATE_DONE){
+		if(ret==STATE_FAIL){
+			return;
+		}
+		switch(state){
+			case STATE_METHOD:
+				req->method=string_detach(dest);
+				break;
+			case STATE_LENGTH:
+				req->length=atoi(string_detach(dest));
+				break;
+			case STATE_BODY:
+				req->body=string_detach(dest);
+				break;
+		}
+
+		state=Transforms[state];
+		func=States[state];
+	
+	}
+}
+
+void
+free_request(struct request *req)
+{
+	INFO("free request...");
+	if(req->method)
+		free(req->method);
 	if(req->body)
 		free(req->body);
 	if(req->data)

@@ -1,8 +1,6 @@
-
-typedef enum {BODY=0,CMD,LEN,STP} states;
-
+#include <stdlib.h>
 //==============================DFA states=================================//
-static states _table[256]={
+static size_t _table[256]={
 /*   0 nul    1 soh    2 stx    3 etx    4 eot    5 enq    6 ack    7 bel  */
         0,       0,       0,       0,       0,       0,       0,       0,
 /*   8 bs     9 ht    10 nl    11 vt    12 np    13 cr    14 so    15 si   */
@@ -37,20 +35,14 @@ static states _table[256]={
         0,       0,       0,       0,       0,       0,       0,       0 
 	};
 
-typedef struct{
-#ifdef DEBUG 
-	unsigned long id;
-#endif
-	int client_fd;
-	//body length
-	size_t length;
-	char *client_addr;
-	//user data
+struct request{
 	char *data;
+	char *method;
 	char *body;
-	char *cmd;
-}request;
+	size_t length;
+	size_t pos;
+};
 
-request *request_new(int client_fd,char *data);
-void request_parse(request*);
-void request_free(request*);
+struct request *request_new();
+void parse_request(struct request *request);
+void free_request(struct request *request);
