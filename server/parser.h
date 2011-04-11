@@ -1,7 +1,6 @@
 #include <stdlib.h>
-typedef enum {NONE=0,METHOD,LENGTH,STOP} states;
 //==============================DFA states=================================//
-static states _table[256]={
+static size_t _table[256]={
 /*   0 nul    1 soh    2 stx    3 etx    4 eot    5 enq    6 ack    7 bel  */
         0,       0,       0,       0,       0,       0,       0,       0,
 /*   8 bs     9 ht    10 nl    11 vt    12 np    13 cr    14 so    15 si   */
@@ -39,8 +38,8 @@ static states _table[256]={
 struct request{
 	char *data;
 	char *method;
-	char *length;
 	char *body;
+	size_t length;
 	size_t pos;
 };
 

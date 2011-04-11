@@ -5,7 +5,7 @@
 #include "string.h"
 #include "debug.h"
 
-enum parser_evt{
+enum parser_atom{
 	 STATE_METHOD,
 	 STATE_LENGTH,
 	 STATE_BODY,
@@ -29,7 +29,7 @@ static int Transforms[LAST_STATE]={
 };
 
 enum{
-	STATE_ACCEPT,
+	STATE_CONTINUE,
 	STATE_FAIL,
 	STATE_DONE,
 };
@@ -44,23 +44,28 @@ int
 state_method(struct request *req,struct string  *dest)
 {
 	INFO("in state_method...");
+	int term=0;
 	char c;
 	int i=0;
 	int pos=0;
 	while(req->data[i]!='\0'){
 		c=req->data[i++];
 		pos++;
-		if(c=='\r'){
-			pos++;//skip \n
-			req->pos=pos;
-			return STATE_ACCEPT;
-		}
-		else if(_table[c]==1)
-			string_putc(dest,c);
-		else{
-			req->method=NULL;
-			return STATE_FAIL;
-		}
+		switch(c){
+			case '\r':
+				term=1;
+				break;
+			case '\n':
+				if(term){
+					req->pos=pos;
+					return STATE_CONTINUE;
+				}
+				else
+					return STATE_FAIL;
+			default:
+				string_putc(dest,c);
+				break;
+			}
 	}
 	return STATE_FAIL;
 }
@@ -69,6 +74,7 @@ int
 state_length(struct request *req,struct string  *dest)
 {
 	INFO("in state_length...");
+	int term=0;
 	char c;
 	int i=req->pos;
 	int pos=i;
@@ -76,16 +82,27 @@ state_length(struct request *req,struct string  *dest)
 	while(req->data[i]!='\0'){
 		c=req->data[i++];
 		(pos)++;
-		if(c=='\r'){
-			pos++;//skip \n
-			req->pos=pos;
-			return STATE_ACCEPT;
+		switch(c){
+			case '\r':{
+				  	term=1;
+					break;
+				  }
+			case '\n':{
+				  	if(term){
+						req->pos=pos;
+						return STATE_CONTINUE;
+					}
+					else
+						return STATE_FAIL;
+				  }
+			default:
+				  if(_table[c]==2)
+					  string_putc(dest,c);
+				  else
+					  return STATE_FAIL;
 		}
-		else if(c>='0'&&c<='9')
-			string_putc(dest,c);
-		else
-			return STATE_FAIL;
 	}
+
 	return STATE_FAIL;
 }
 
@@ -95,14 +112,13 @@ state_body(struct request *req,struct string  *dest)
 	INFO("in state_body...");
 	char c;
 	int i=req->pos,c1=0;
-	size_t body_len=atoi(req->length);
 	int pos=i;
-	LOG("pos:%d",i);
-	while(req->data[i++]!='\0'&&(c1++)<body_len){
+	LOG("req len:%d",req->length);
+	while(req->data[i++]!='\0'&&(c1++)<req->length){
 			c=req->data[i];
 			string_putc(dest,c);
 	}
-	return STATE_ACCEPT;
+	return STATE_CONTINUE;
 }
 
 void
@@ -116,21 +132,17 @@ parse_request(struct request *req)
 	int ret;
 	while((ret=func(req,dest))!=STATE_DONE){
 		if(ret==STATE_FAIL){
-			INFO("STATE_FAIL...");
 			return;
 		}
 		switch(state){
 			case STATE_METHOD:
 				req->method=string_detach(dest);
-				LOG("method:%s",req->method);
 				break;
 			case STATE_LENGTH:
-				req->length=string_detach(dest);
-				LOG("length:%s",req->length);
+				req->length=atoi(string_detach(dest));
 				break;
 			case STATE_BODY:
 				req->body=string_detach(dest);
-				LOG("reqbody:%s",req->body);
 				break;
 		}
 
@@ -138,4 +150,17 @@ parse_request(struct request *req)
 		func=States[state];
 	
 	}
+}
+
+void
+free_request(struct request *req)
+{
+	INFO("free request...");
+	if(req->method)
+		free(req->method);
+	if(req->body)
+		free(req->body);
+	if(req->data)
+		free(req->data);
+	free(req);
 }
