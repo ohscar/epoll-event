@@ -99,6 +99,7 @@ request_parse(request *req)
 
 void
 request_free(request *req){
+	if(!req) return;
 	INFO("free req");
 	if(req->cmd)
 		free(req->cmd);
