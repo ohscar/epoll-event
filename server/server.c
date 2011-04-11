@@ -10,7 +10,8 @@
 #include<signal.h>
 #include "poll.h"
 #include "debug.h"
-#include "request.h"
+//#include "request.h"
+#include "parser.h"
 #define BUFFSIZE 1024
 
 void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epoll_event ev)
@@ -25,17 +26,26 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epo
         // if we actually get data print it
        //buf[val] = '\0';
        LOG(" received data -> %s %t\n", buf,clock());
-       request *req=request_new(elem->fd,buf);
-       request_parse(req);
-       if(req->body!=NULL)
+       
+       struct request *req=request_new();
+       if(req)
        {
-       LOG("len:%d,body:%s",req->length,req->body);
-       int sent=write(elem->fd,req->body,strlen(req->body));
-       if(sent==-1)
-	       INFO("sent error\n");
-       LOG("sent:%d",sent);
+	  req->data=strdup(buf);
+       	  parse_request(req);
+	  if(req->method)
+	  LOG("method:%s",req->method);
+	  LOG("length:%d",req->length);
+	  if(req->body){
+	 	 LOG("body:%s",req->body);
+		 int sent=write(elem->fd,req->body,strlen(req->body));
+		 if(sent==-1)
+			 INFO("sent error");
+		 else
+			 LOG("sent:%d",sent);
+	  }
+	  free_request(req);
        }
-       request_free(req);
+       
     }
 }
 
