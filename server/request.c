@@ -34,6 +34,12 @@ enum{
 	STATE_DONE,
 };
 
+struct request 
+*request_new()
+{
+	struct request *req=(struct request*)malloc(sizeof(struct request));
+	return req;
+}
 int
 last_state(struct request *req,struct string *dest)
 {

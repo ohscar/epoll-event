@@ -9,7 +9,7 @@ CFLAGS = -Wall -O2
 endif
 
 #name all the object files
-OBJS = server.o hash_table/hashtable.o poll.o request.o string.o  parser.o
+OBJS = server.o hash_table/hashtable.o poll.o request.o string.o 
 
 all : epoll hash_table
 
