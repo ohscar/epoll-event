@@ -1,7 +1,7 @@
 #ifndef _POLL_H
 #define _POLL_H
 
-#include "hash_table/hashtable.h"
+#include "uthash.h"
 #include <sys/epoll.h>
 
 #define MAX_EVENTS 100
@@ -39,6 +39,7 @@ struct poll_event_element
     uint32_t cur_event;
     /** only used to enable accept and listen callbacks */
     uint8_t cb_flags;
+    UT_hash_handle hh;
 };
 #define poll_event_element_s sizeof(poll_event_element_t)
 
@@ -48,8 +49,6 @@ struct poll_event_element
  */
 struct poll_event
 {
-    /** hash table of fds - poll event elements */
-    hash_table_t *table;
     /** timeout call back
      * when in an event loop it can return any non zero value to stop the eventloop
      */

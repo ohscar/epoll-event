@@ -13,13 +13,13 @@
 #include "request.h"
 #define BUFFSIZE 1024
 
-void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epoll_event ev)
+void read_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epoll_event ev)
 {
     // NOTE -> read is also invoked on accept and connect
     INFO("in read_cb");
     // we just read data and print
     char buf[BUFFSIZE];
-    int val = read(elem->fd, buf, BUFFSIZE);
+    int val = read(node->fd, buf, BUFFSIZE);
     if (val>0)
     {
         // if we actually get data print it
@@ -36,7 +36,7 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epo
 	  LOG("length:%d",req->length);
 	  if(req->body){
 	 	 LOG("body:%s",req->body);
-		 int sent=write(elem->fd,req->body,strlen(req->body));
+		 int sent=write(node->fd,req->body,strlen(req->body));
 		 if(sent==-1)
 			 INFO("sent error");
 		 else
@@ -49,20 +49,20 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epo
 }
 
 
-void close_cb (poll_event_t * poll_event, poll_event_element_t * elem, struct epoll_event ev)
+void close_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epoll_event ev)
 {
     INFO("in close_cb");
     // close the socket, we are done with it
-    poll_event_remove(poll_event, elem->fd);
+    poll_event_remove(poll_event, node->fd);
 }
 
-void accept_cb(poll_event_t * poll_event, poll_event_element_t * elem, struct epoll_event ev)
+void accept_cb(poll_event_t * poll_event, poll_event_element_t * node, struct epoll_event ev)
 {
     INFO("in accept_cb");
     // accept the connection 
     struct sockaddr_in clt_addr;
     socklen_t clt_len = sizeof(clt_addr);
-    int listenfd = accept(elem->fd, (struct sockaddr*) &clt_addr, &clt_len);
+    int listenfd = accept(node->fd, (struct sockaddr*) &clt_addr, &clt_len);
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
     fprintf(stderr, "got the socket %d\n", listenfd);
     // set flags to check 

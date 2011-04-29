@@ -9,15 +9,12 @@ CFLAGS = -Wall -O2
 endif
 
 #name all the object files
-OBJS = server.o hash_table/hashtable.o poll.o request.o string.o 
+OBJS = server.o  poll.o request.o string.o 
 
-all : epoll hash_table
+all : epoll
 
 epoll : $(OBJS)
 	$(CC) $(LDFLAGS) -o server $^
-
-hash_table : 
-	make -C hash_table
 
 debug :
 	make all DEBUG=1

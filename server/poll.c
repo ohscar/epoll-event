@@ -1,6 +1,5 @@
 #include "poll.h"
 #include "debug.h"
-#include "hash_table/hashtable.h"
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
@@ -9,6 +8,8 @@
 #include <string.h>
 #include<unistd.h>
 
+
+ static  poll_event_element_t * _nodes;
 //poll_event_element functions
 /**
  * Function to allocate a new poll event element
@@ -48,19 +49,14 @@ void poll_event_element_delete(poll_event_element_t * elem)
  */
 poll_event_t * poll_event_new(int timeout)
 {
+	_nodes=NULL;
     poll_event_t * poll_event = calloc(1, poll_event_s);
     if (!poll_event)
     {
         INFO("calloc failed at poll_event");
         return NULL; // No Memory
     }
-    poll_event->table = hash_table_new(MODE_VALUEREF);
-    if (!poll_event->table)
-    {
-        free(poll_event);
-        INFO("calloc failed at hashtble");
-        return NULL;
-    }
+    
     poll_event->timeout = timeout;
     poll_event->epoll_fd = epoll_create(MAX_EVENTS);
     INFO("Created a new poll event");
@@ -74,7 +70,7 @@ poll_event_t * poll_event_new(int timeout)
 void poll_event_delete(poll_event_t* poll_event)
 {
     INFO("deleting a poll_event");
-    hash_table_delete(poll_event->table);
+    //hash_table_delete(poll_event->table);
     close(poll_event->epoll_fd);
     free(poll_event);
 }
@@ -90,7 +86,7 @@ void poll_event_delete(poll_event_t* poll_event)
 int poll_event_add(poll_event_t* poll_event, int fd, uint32_t flags, poll_event_element_t **poll_element)
 {
     poll_event_element_t *elem = NULL;
-    elem = (poll_event_element_t *) HT_LOOKUP(poll_event->table, &fd);
+    HASH_FIND_INT(_nodes,&fd,elem);
     if (elem)
     {
         LOG("fd (%d) already added updating flags", fd);
@@ -105,11 +101,8 @@ int poll_event_add(poll_event_t* poll_event, int fd, uint32_t flags, poll_event_
     else
     {
         elem = poll_event_element_new(fd, flags);
-        if (HT_ADD(poll_event->table, &fd, elem))
-        {
-            // error in hash table
-            return -1;
-        }
+       
+       HASH_ADD_INT(_nodes,fd,elem);
         LOG("Added fd(%d)", fd);
         struct epoll_event ev;
         memset(&ev, 0, sizeof(struct epoll_event));
@@ -127,10 +120,14 @@ int poll_event_add(poll_event_t* poll_event, int fd, uint32_t flags, poll_event_
  */
 int poll_event_remove(poll_event_t* poll_event, int fd)
 {
-    // TODO Handle error
-    HT_REMOVE(poll_event->table, &fd);
-    close(fd);
-    epoll_ctl(poll_event->epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+    poll_event_element_t *elem = NULL;
+    HASH_FIND_INT(_nodes,&fd,elem);
+    if(elem)
+    {
+	 		HASH_DEL(_nodes,elem);
+   	 close(fd);
+    	epoll_ctl(poll_event->epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+    }
     return 0;
 }
 
@@ -159,7 +156,8 @@ int poll_event_process(poll_event_t * poll_event)
     for(;i<fds;i++)
     {
         poll_event_element_t * value = NULL;
-        if ((value = (poll_event_element_t *) HT_LOOKUP(poll_event->table, &events[i].data.fd)) != NULL)
+        	HASH_FIND_INT(_nodes,&events[i].data.fd,value);
+        if (value)
         {
             LOG("started processing for event id(%d) and sock(%d)", i, events[i].data.fd);
             // when data avaliable for read or urgent flag is set
