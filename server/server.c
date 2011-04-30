@@ -18,7 +18,7 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epo
     // NOTE -> read is also invoked on accept and connect
     INFO("in read_cb");
     // we just read data and print
-    char buf[BUFFSIZE];
+    char buf[BUFFSIZE]={0};
     int val = read(node->fd, buf, BUFFSIZE);
     if (val>0)
     {

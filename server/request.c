@@ -156,12 +156,15 @@ parse_request(struct request *req)
 		func=States[state];
 	
 	}
+	string_free(data);
 }
 
 void
 free_request(struct request *req)
 {
 	INFO("free request...");
+	if(req)
+	{
 	if(req->method)
 		free(req->method);
 	if(req->body)
@@ -169,4 +172,5 @@ free_request(struct request *req)
 	if(req->data)
 		free(req->data);
 	free(req);
+	}
 }

@@ -1,4 +1,4 @@
-CC = gcc -fPIC 
+CC = gcc -fPIC -g
 LDFLAGS = -lm
 
 # set DEBUG options
