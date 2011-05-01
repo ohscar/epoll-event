@@ -136,19 +136,26 @@ parse_request(struct request *req)
 	struct string *data=string_new(0);
 	struct string *dest=data;
 	int ret;
+	char *tmp;
 	while((ret=func(req,dest))!=STATE_DONE){
 		if(ret==STATE_FAIL){
 			return;
 		}
 		switch(state){
 			case STATE_METHOD:
-				req->method=string_detach(dest);
+				tmp=string_detach(dest);
+				req->method=strdup(tmp);
+				free(tmp);
 				break;
 			case STATE_LENGTH:
-				req->length=atoi(string_detach(dest));
+				tmp=string_detach(dest);
+				req->length=atoi(tmp);
+				free(tmp);
 				break;
 			case STATE_BODY:
-				req->body=string_detach(dest);
+				tmp=string_detach(dest);
+				req->body=strdup(tmp);
+				free(tmp);
 				break;
 		}
 
